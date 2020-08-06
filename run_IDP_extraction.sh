@@ -1,6 +1,9 @@
 #!/bin/bash
 
 # extract IDPs into text files necessary- this is one long textfile of numbers for each subj :) 
+
+# Accompanying scripts: microIDPs.sh , concat_IDPs.sh
+
 # *** AVERAGE TRACT MASKS MUST BE CREATED IN FORM ${structure}_av_mask.nii.gz AND STORED IN IDPdir/xtract_averages ***
 # *** USE GET_AVERAGES.SH TO DO THIS STEP IF NOT ALREADY CREATED ***
 
