@@ -1,8 +1,10 @@
 #!/bin/bash
 
-# A script to take in structural and diffusion data, and run the UKBioBank structural processing pipeline, DTIfit, DTIfit with --kurt, bedpostx, NODDI, and make std2diff and diff2std warps. XTRACT must be run seperately after this script is finished. 
+# A script to take in structural and diffusion data, and run the UKBioBank structural processing pipeline, DTIfit, DTIfit with --kurt, bedpostx, and make std2diff and diff2std warps. XTRACT and NODDI_Watson must be run seperately after this script is finished. 
 
-# Needs input of: text file of all subject IDs in form sub-**** with only spaces between. Subjects must have both anat and dwi folders (if no T2w that is ok there is an if loop embedded)
+# Needs input of: text file of all subject IDs in form sub-**** with only spaces between. Subjects must have both anat and dwi folders (if no T2w that is ok there is an 'if' loop embedded)
+
+# Accompanying scripts: directory_setup.sh, UKBB_structural pipeline
 
 #----------------------------------
 # step 1: load in all subject IDs and set up paths
@@ -30,12 +32,7 @@ echo ${jobID}
 jobID=`echo -e $jobID | awk '{print $NF}'`
 
 #----------------------------------
-# step 3: run NODDI and bedpostx, dependent on prev one finishing
-#----------------------------------
-jobsub -q gpu -p 1 -g 1 -s "noddi_bedpost" -c "sh noddi_bedpost.sh ${diffdir}" -t 10:00:00 -m 1 -w ${jobID}
-
-#----------------------------------
-# step 4: run DTIfit (single shell data bvals 0 and 1000)
+# step 3: run DTIfit (single shell data bvals 0 and 1000)
 #----------------------------------
 b1cmd=`${FSLDIR}/bin/fsl_sub -q long.q -j ${jobID} -l ${diffdir}/logs_b1 -N bvals_1000 ${FSLDIR}/bin/select_dwi_vols ${diffdir}/data.nii.gz ${diffdir}/bvals ${diffdir}/data_b1 0 -b 1000 -obv ${diffdir}/bvecs`
 
@@ -45,7 +42,7 @@ ${FSLDIR}/bin/fsl_sub -q long.q -j ${b1cmd} -l ${outdir}/dti/logs -N dti ${FSLDI
 
 
 #----------------------------------
-# step 5: run DKIfit (only on bvals above 1000, multishell), getting mean kurtosis map
+# step 4: run DKIfit (only on bvals above 1000, multishell), getting mean kurtosis map
 #----------------------------------
 b2cmd=`${FSLDIR}/bin/fsl_sub -q long.q -j ${jobID} -l ${diffdir}/logs_b2 -N bvals_multi ${FSLDIR}/bin/select_dwi_vols ${diffdir}/data.nii.gz ${diffdir}/bvals ${diffdir}/data_b2 0 -b 1000 -b 2000 -b 3000 -obv ${diffdir}/bvecs`
 
@@ -54,7 +51,7 @@ mkdir -p ${outdir}/dki
 ${FSLDIR}/bin/fsl_sub -q long.q -j ${b2cmd} -l ${outdir}/dki/logs -N dki ${FSLDIR}/bin/dtifit -k ${diffdir}/data_b2.nii.gz -o ${outdir}/dki/dki -m ${diffdir}/nodif_brain_mask -r ${diffdir}/data_b2.bvec -b ${diffdir}/data_b2.bval --kurt --kurtdir --save_tensor --sse 
 
 #----------------------------------
-# step 6: get standard2diff and diff2standard warps (adult std space) 
+# step 5: get standard2diff and diff2standard warps (adult std space) 
 #----------------------------------
 
 # reorient T1 to standard space to help with registration
@@ -87,16 +84,23 @@ flirtcmd=`${FSLDIR}/bin/fsl_sub -q long.q -j ${ukbb} -l ${outdir}/xfms/logs ${FS
 # now need to combine these into straight diff2std (diff->T1->MNI) 
 convertcmd=`${FSLDIR}/bin/fsl_sub -q long.q -j ${flirtcmd} -l ${outdir}/xfms/logs ${FSLDIR}/bin/convertwarp --ref=${FSLDIR}/data/standard/MNI152_T1_1mm --premat=${outdir}/xfms/diff2str.mat --warp1=${outdir}/T1/transforms/T1_to_MNI_warp --out=${outdir}/xfms/diff2std_warp --rel`
 
-# submit this double command using fslsub and apply the warp
+# submit this double command using fslsub and apply the warp to check success visually
 ${FSLDIR}/bin/fsl_sub -q long.q -j ${convertcmd} -l ${outdir}/xfms/logs ${FSLDIR}/bin/applywarp -i ${diffdir}/nodif_brain -r ${FSLDIR}/data/standard/MNI152_T1_1mm -w ${outdir}/xfms/diff2std_warp -o ${outdir}/xfms/diff2std --rel --interp=spline
 
 # invert the warp to make std2diff 
 ${FSLDIR}/bin/fsl_sub -q long.q -j ${convertcmd} -l ${outdir}/xfms/logs ${FSLDIR}/bin/invwarp -w ${outdir}/xfms/diff2std_warp -o ${outdir}/xfms/std2diff_warp -r ${diffdir}/nodif_brain --rel
 
 #----------------------------------
-# step 7: remember to run xtract !!  
+# step 6: run bedpostx
+#----------------------------------
+#jobsub -q gpu -p 1 -g 1 -s "noddi_bedpost" -c "sh noddi_bedpost.sh ${diffdir}" -t 10:00:00 -m 1 -w ${jobID}
+
+${FSLDIR}/bin/fsl_sub -q long.q -j ${jobID} -l ${diffdir}/logs -N bedpostx ${FSLDIR}/bin/bedpostx_gpu ${diffdir}
+
+#----------------------------------
+# step 7: remember to run xtract and NODDI
 #----------------------------------
 
 done
-done < final_subs_1000.txt
+done < final_subs_2000.txt
 
