@@ -2,7 +2,7 @@
 
 # extract IDPs into text files necessary- this is one long textfile of numbers for each subj :) 
 
-# Accompanying scripts: microIDPs.sh , concat_IDPs.sh
+# Accompanying scripts: struct_IDPs.sh microIDPs.sh , concat_IDPs.sh
 
 # *** AVERAGE TRACT MASKS MUST BE CREATED IN FORM ${structure}_av_mask.nii.gz AND STORED IN IDPdir/xtract_averages ***
 # *** USE GET_AVERAGES.SH TO DO THIS STEP IF NOT ALREADY CREATED ***
@@ -27,13 +27,13 @@ mkdir -p ${IDPdir}/IDPs/${subj}
 # step 2: STRUCTURAL IDPS
 #--------------------------------------
 
+cd /share/neurodev/Rebecca/ABCD/derivatives/${subj}
 # Generate IDPs using ukbb pipeline script
 BB_BIN_DIR=/share/neurodev/Rebecca/ABCD/UK_biobank_pipeline_v_1
 templ=${BB_BIN_DIR}/templates
 export BB_BIN_DIR templ
 
 bb_IDP=`${FSLDIR}/bin/fsl_sub -q short.q -l ${T1}/logs -N idp_${subj} ${BB_BIN_DIR}/bb_IDP/bb_IDP ${subdir}` 
-#-remove ${dataFolder}/IDPs/${subj}
 
 # Put all subjects IDPs in a single file, by calling struct_IDPs
 ${FSLDIR}/bin/fsl_sub -q short.q -l ${IDPdir}/IDPs/${subj}/logs -j ${bb_IDP} -N struct_IDPs sh struct_IDPs.sh ${subdir} ${IDPdir} ${subj}
@@ -75,7 +75,6 @@ echo `date` ALL MICRO IDPS EXTRACTED
 # needs: IDP_files directory (the outdir), subj
 ${FSLDIR}/bin/fsl_sub -q short.q -l ${IDPdir}/IDPs/${subj}/logs -j ${tract_stats} -N concat_IDPs sh concat_IDPs.sh ${IDPdir}/IDPs/${subj} ${subj}
 
-#echo `date` all IDPs combined
 
 done
-done < test_IDs.txt
+done < subj_IDs.txt
