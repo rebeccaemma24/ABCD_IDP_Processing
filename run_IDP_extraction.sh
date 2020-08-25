@@ -36,6 +36,7 @@ export BB_BIN_DIR templ
 bb_IDP=`${FSLDIR}/bin/fsl_sub -q short.q -l ${T1}/logs -N idp_${subj} ${BB_BIN_DIR}/bb_IDP/bb_IDP ${subdir}` 
 
 # Put all subjects IDPs in a single file, by calling struct_IDPs
+cd ${IDPdir}
 ${FSLDIR}/bin/fsl_sub -q short.q -l ${IDPdir}/IDPs/${subj}/logs -j ${bb_IDP} -N struct_IDPs sh struct_IDPs.sh ${subdir} ${IDPdir} ${subj}
 
 echo `date` submitted structural IDPs
