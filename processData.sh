@@ -93,7 +93,6 @@ ${FSLDIR}/bin/fsl_sub -q long.q -j ${convertcmd} -l ${outdir}/xfms/logs ${FSLDIR
 #----------------------------------
 # step 6: run bedpostx
 #----------------------------------
-#jobsub -q gpu -p 1 -g 1 -s "noddi_bedpost" -c "sh noddi_bedpost.sh ${diffdir}" -t 10:00:00 -m 1 -w ${jobID}
 
 ${FSLDIR}/bin/fsl_sub -q long.q -j ${jobID} -l ${diffdir}/logs -N bedpostx ${FSLDIR}/bin/bedpostx_gpu ${diffdir}
 
