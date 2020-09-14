@@ -1,6 +1,8 @@
 # ABCD_IDP_Processing
 Scripts to run processing on structural and diffusion imaging data for a large number of subjects including tract-specific microstructure IDPs. 
 
+Requirements: UK Biobank structural and IDP-extraction pipelines, NODDI (Watson model; Zhang et al., 2012), XTRACT (Warrington et al., 2020), FSL toolboxes.
+
 STEP 1: Run 'processData' 
 - this sets up directory structure, runs the UKBB structural pipeline, DTIfit, DKI, and bedpostx, and creates warps between diffusion and standard MNI space. The diff2std warp is also applied so the success of warping can be checked visually 
 - calls script 'directory_setup' to copy over and rename relevant files, and create nodif_brain and mask
